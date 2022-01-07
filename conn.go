@@ -24,6 +24,7 @@ import (
 
 	"github.com/lib/pq/oid"
 	"github.com/lib/pq/scram"
+	"github.com/lib/pq/sm3"
 )
 
 // Common error types
@@ -1319,6 +1320,20 @@ func (cn *conn) auth(r *readBuf, o values) {
 		if sc.Err() != nil {
 			errorf("SCRAM-SHA-256 error: %s", sc.Err().Error())
 		}
+	case 13:
+		s := string(r.next(4))
+		w := cn.writeBuf('p')
+		w.string("sm3" + sm3s(sm3s(o["password"]+o["user"])+s))
+		cn.send(w)
+
+		t, r := cn.recv()
+		if t != 'R' {
+			errorf("unexpected password response: %q", t)
+		}
+
+		if r.int32() != 0 {
+			errorf("unexpected authentication response: %q", t)
+		}
 
 	default:
 		errorf("unknown authentication response: %d", code)
@@ -1682,6 +1697,10 @@ func md5s(s string) string {
 	h := md5.New()
 	h.Write([]byte(s))
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func sm3s(s string) string {
+	return fmt.Sprintf("%x", sm3.Sm3Sum([]byte(s)))
 }
 
 func (cn *conn) sendBinaryParameters(b *writeBuf, args []driver.Value) {
