@@ -22,9 +22,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/lib/pq/oid"
-	"github.com/lib/pq/scram"
-	"github.com/lib/pq/sm3"
+	"github.com/myzhen/pq/oid"
+	"github.com/myzhen/pq/scram"
+	"github.com/myzhen/pq/sm3"
 )
 
 // Common error types
